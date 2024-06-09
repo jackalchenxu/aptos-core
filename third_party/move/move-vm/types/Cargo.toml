@@ -10,6 +10,7 @@ publish = false
 edition = "2021"
 
 [dependencies]
+alloy-rlp = { workspace = true }
 derivative = { workspace = true }
 itertools = { workspace = true }
 proptest = { workspace = true, optional = true }
@@ -25,7 +26,9 @@ move-core-types = { path = "../../move-core/types" }
 
 [dev-dependencies]
 claims = { workspace = true }
-move-binary-format = { path = "../../move-binary-format", features = ["fuzzing"] }
+move-binary-format = { path = "../../move-binary-format", features = [
+    "fuzzing",
+] }
 proptest = { workspace = true }
 rand = { workspace = true }
 

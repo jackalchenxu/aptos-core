@@ -16,6 +16,7 @@ pub mod hash;
 pub mod object;
 pub mod object_code_deployment;
 pub mod randomness;
+pub mod rlp;
 pub mod state_storage;
 pub mod string_utils;
 pub mod transaction_context;
@@ -83,6 +84,7 @@ pub fn all_natives(
     add_natives_from_module!("aggregator_v2", aggregator_v2::make_all(builder));
     add_natives_from_module!("object", object::make_all(builder));
     add_natives_from_module!("debug", debug::make_all(builder));
+    add_natives_from_module!("rlp", rlp::make_all(builder));
     add_natives_from_module!("string_utils", string_utils::make_all(builder));
     add_natives_from_module!("consensus_config", consensus_config::make_all(builder));
     add_natives_from_module!("function_info", function_info::make_all(builder));

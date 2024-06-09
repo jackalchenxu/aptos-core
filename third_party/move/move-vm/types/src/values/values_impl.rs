@@ -8,6 +8,7 @@ use crate::{
     loaded_data::runtime_types::Type,
     views::{ValueView, ValueVisitor},
 };
+use alloy_rlp::Encodable;
 use move_binary_format::{
     errors::*,
     file_format::{Constant, SignatureToken},
@@ -3051,6 +3052,16 @@ impl Value {
         })
         .ok()
     }
+
+    pub fn rlp_encode(&self) -> Vec<u8> {
+        let mut output = vec![];
+        self.0.encode(&mut output);
+        output
+    }
+
+    pub fn rlp_decode(&self, buffer: &mut [u8]) -> Option<Self> {
+        self.0.decode(buffer).map(|v| Value(v)).ok()
+    }
 }
 
 impl Struct {
@@ -3894,5 +3905,103 @@ impl Value {
     // TODO: Consider removing this API, or at least it should return a Result!
     pub fn as_move_value(&self, layout: &MoveTypeLayout) -> MoveValue {
         self.0.as_move_value(layout)
+    }
+}
+
+impl alloy_rlp::Encodable for ValueImpl {
+    // fn length(&self) -> usize {
+    //     let payload_length = self._alloy_rlp_payload_length();
+    //     payload_length + alloy_rlp::length_of_length(payload_length)
+    // }
+
+    fn encode(&self, out: &mut dyn alloy_rlp::BufMut) {
+        match self {
+            // Primitive types.
+            ValueImpl::Bool(x) => x.encode(out),
+            ValueImpl::U8(x) => x.encode(out),
+            ValueImpl::U16(x) => x.encode(out),
+            ValueImpl::U32(x) => x.encode(out),
+            ValueImpl::U64(x) => x.encode(out),
+            ValueImpl::U128(x) => x.encode(out),
+
+            ValueImpl::U256(x) => {
+                alloy_rlp::encode_list(&x.to_le_bytes(), out);
+            },
+            ValueImpl::Address(x) => {
+                alloy_rlp::encode_list(&x.to_vec(), out);
+            },
+            ValueImpl::Container(container) => match container {
+                Container::Locals(locals) => locals.borrow().encode(out),
+                Container::Vec(v) => v.borrow().encode(out),
+                Container::Struct(s) => s.borrow().encode(out),
+                Container::VecU8(x) => x.borrow().encode(out),
+                Container::VecU64(x) => x.borrow().encode(out),
+                Container::VecU128(x) => x.borrow().encode(out),
+                Container::VecBool(x) => x.borrow().encode(out),
+                Container::VecAddress(x) => {
+                    let mut concat_rlp: Vec<Vec<u8>> = vec![];
+                    for val in x.borrow().iter() {
+                        let mut addr_rlp = vec![];
+                        val.encode(&mut addr_rlp);
+                        concat_rlp.push(addr_rlp);
+                    }
+                    concat_rlp.encode(out);
+                },
+                Container::VecU16(x) => x.borrow().encode(out),
+                Container::VecU32(x) => x.borrow().encode(out),
+                Container::VecU256(x) => {
+                    let mut concat_rlp: Vec<Vec<u8>> = vec![];
+                    for val in x.borrow().iter() {
+                        let mut addr_rlp = vec![];
+                        alloy_rlp::encode_list(&val.to_le_bytes(), &mut addr_rlp);
+                        concat_rlp.push(addr_rlp);
+                    }
+                    concat_rlp.encode(out);
+                },
+            },
+            ValueImpl::ContainerRef(x) => {
+                let container = x.container();
+                match container {
+                    Container::Locals(locals) => todo!(),
+                    Container::Vec(v) => todo!(),
+                    Container::Struct(s) => todo!(),
+                    Container::VecU8(x) => {
+                        x.borrow().encode(out);
+                    },
+                    Container::VecU64(x) => x.borrow().encode(out),
+                    Container::VecU128(x) => x.borrow().encode(out),
+                    Container::VecBool(x) => x.borrow().encode(out),
+                    Container::VecAddress(x) => {
+                        let mut concat_rlp: Vec<Vec<u8>> = vec![];
+                        for val in x.borrow().iter() {
+                            let mut addr_rlp = vec![];
+                            val.encode(&mut addr_rlp);
+                            concat_rlp.push(addr_rlp);
+                        }
+                        concat_rlp.encode(out);
+                    },
+                    Container::VecU16(x) => x.borrow().encode(out),
+                    Container::VecU32(x) => x.borrow().encode(out),
+                    Container::VecU256(x) => {
+                        let mut concat_rlp: Vec<Vec<u8>> = vec![];
+                        for val in x.borrow().iter() {
+                            let mut addr_rlp = vec![];
+                            alloy_rlp::encode_list(&val.to_le_bytes(), &mut addr_rlp);
+                            concat_rlp.push(addr_rlp);
+                        }
+                        concat_rlp.encode(out);
+                    },
+                }
+            },
+
+            // All other cases should not be possible.
+            _ => {},
+        }
+    }
+}
+
+impl ValueImpl {
+    pub fn decode(&self, buf: &mut [u8]) -> alloy_rlp::Result<Self> {
+        todo!();
     }
 }

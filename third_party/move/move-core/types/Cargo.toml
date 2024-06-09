@@ -10,8 +10,11 @@ publish = ["crates-io"]
 edition = "2021"
 
 [dependencies]
+alloy-rlp = { version = "0.3.5", features = ["derive"] }
 anyhow = { workspace = true }
-arbitrary = { workspace = true, features = ["derive_arbitrary"], optional = true }
+arbitrary = { workspace = true, features = [
+    "derive_arbitrary",
+], optional = true }
 bcs = { workspace = true }
 bytes = { workspace = true }
 ethnum = { workspace = true }
